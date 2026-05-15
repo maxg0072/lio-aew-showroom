@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>askLio: Spend Control</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;overflow:hidden;background:#060a16;font-family:'Inter',sans-serif;user-select:none}
+canvas{display:block}
+.overlay{position:fixed;inset:0;z-index:10;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none}
+.overlay.menu{pointer-events:auto;background:rgba(6,10,22,.9)}
+.screen{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;opacity:0;pointer-events:none;transition:opacity .4s}
+.screen.active{opacity:1;pointer-events:auto}
+.logo{font-family:'Orbitron',sans-serif;font-size:clamp(24px,5vw,58px);font-weight:900;text-align:center;line-height:1.15;background:linear-gradient(135deg,#6366f1,#22d3ee,#10b981);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;filter:drop-shadow(0 0 30px rgba(99,102,241,.35))}
+.sub{color:#94a3b8;font-size:clamp(12px,1.8vw,17px);text-align:center;max-width:520px;line-height:1.5;margin-bottom:8px}
+.btn{padding:14px 44px;font-family:'Orbitron',sans-serif;font-size:clamp(14px,2vw,20px);font-weight:700;color:#fff;background:linear-gradient(135deg,#6366f1,#8b5cf6);border:none;border-radius:50px;cursor:pointer;pointer-events:auto;transition:transform .15s,box-shadow .15s;box-shadow:0 0 25px rgba(99,102,241,.3)}
+.btn:hover{transform:scale(1.05);box-shadow:0 0 40px rgba(99,102,241,.5)}
+.btn:active{transform:scale(.96)}
+.btn-sm{padding:10px 28px;font-size:clamp(12px,1.4vw,15px)}
+.btn-ghost{background:rgba(255,255,255,.06);box-shadow:none;border:1px solid rgba(255,255,255,.1)}
+.btn-ghost:hover{background:rgba(255,255,255,.1);box-shadow:none}
+.brand{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);color:#475569;font-size:12px;display:flex;align-items:center;gap:8px}
+.brand b{font-family:'Orbitron',sans-serif;font-size:14px;background:linear-gradient(90deg,#6366f1,#22d3ee);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hint{color:#475569;font-size:clamp(10px,1.3vw,13px);text-align:center;margin-top:6px}
+.go-title{font-family:'Orbitron',sans-serif;font-size:clamp(22px,3.5vw,38px);font-weight:900;color:#22d3ee}
+.go-score{font-family:'Orbitron',sans-serif;font-size:clamp(32px,5.5vw,64px);font-weight:900;color:#10b981;text-shadow:0 0 30px rgba(16,185,129,.3)}
+.rpt{color:#64748b;font-size:11px;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:4px}
+.stat{display:flex;justify-content:space-between;width:100%;max-width:360px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.05);color:#94a3b8;font-size:13px}
+.stat span:last-child{color:#f1f5f9;font-weight:700}
+.input{background:rgba(255,255,255,.06);border:2px solid rgba(255,255,255,.1);border-radius:10px;padding:10px 14px;font-family:'Inter',sans-serif;font-size:16px;color:#f1f5f9;outline:none;width:180px;pointer-events:auto}
+.input:focus{border-color:#6366f1}
+.input::placeholder{color:#475569}
+.row{display:flex;gap:10px;align-items:center}
+.lb-title{font-family:'Orbitron',sans-serif;font-size:clamp(20px,3.5vw,36px);font-weight:900;color:#f59e0b;margin-bottom:8px}
+.lb-box{width:100%;max-width:440px}
+.lb-row{display:flex;align-items:center;padding:8px 12px;margin:4px 0;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.05);border-radius:8px}
+.lb-row:first-child{border-color:rgba(245,158,11,.3)}
+.lb-rank{font-family:'Orbitron',sans-serif;font-size:16px;font-weight:700;width:36px;color:#475569}
+.lb-row:first-child .lb-rank{color:#f59e0b}
+.lb-name{flex:1;font-size:14px;font-weight:600;color:#e2e8f0}
+.lb-sc{font-family:'Orbitron',sans-serif;font-size:14px;font-weight:700;color:#22d3ee}
+.mute{position:fixed;top:10px;right:10px;width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);color:#e2e8f0;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:20;pointer-events:auto}
+.legend{display:flex;gap:16px;margin-top:4px}
+.legend-item{display:flex;align-items:center;gap:5px;font-size:clamp(10px,1.3vw,12px);color:#64748b}
+.legend-dot{width:10px;height:10px;border-radius:50%}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+
+<div class="overlay menu" id="ov">
+  <div class="screen active" id="s-title">
+    <div class="logo">SPEND<br>CONTROL</div>
+    <div class="sub">Transactions flow through your system in real-time. Intercept fraud before it auto-processes. Let clean spend pass through. You are the last line of defense.</div>
+    <button class="btn" id="btn-start">ACTIVATE SCANNER</button>
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#10b981"></div>Valid — don't touch</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#ef4444"></div>Fraud — intercept!</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div>Suspicious — flag it</div>
+    </div>
+    <div class="hint">Click / tap fraudulent transactions before they process</div>
+    <div class="brand">Powered by <b>askLio</b></div>
+  </div>
+
+  <div class="screen" id="s-over">
+    <div class="go-title">SCAN COMPLETE</div>
+    <div class="go-score" id="final-score">€0</div>
+    <div class="rpt">SPEND CONTROL REPORT</div>
+    <div class="stat"><span>Transactions Scanned</span><span id="st-total">0</span></div>
+    <div class="stat"><span>Fraud Intercepted</span><span id="st-fraud">0</span></div>
+    <div class="stat"><span>Fraud Missed</span><span id="st-missed">0</span></div>
+    <div class="stat"><span>False Positives</span><span id="st-false">0</span></div>
+    <div class="stat"><span>Accuracy</span><span id="st-acc">0%</span></div>
+    <div class="stat"><span>Budget Protected</span><span id="st-budget">€0</span></div>
+    <div class="stat"><span>Best Streak</span><span id="st-streak">0</span></div>
+    <div class="row" style="margin-top:14px">
+      <input class="input" id="inp-name" placeholder="Your name..." maxlength="16" autocomplete="off">
+      <button class="btn btn-sm" id="btn-save">SAVE</button>
+    </div>
+    <div class="row" style="margin-top:8px">
+      <button class="btn btn-sm" id="btn-retry">PLAY AGAIN</button>
+      <button class="btn btn-sm btn-ghost" id="btn-lb">SCORES</button>
+    </div>
+  </div>
+
+  <div class="screen" id="s-lb">
+    <div class="lb-title">LEADERBOARD</div>
+    <div class="lb-box" id="lb-list"></div>
+    <button class="btn btn-sm btn-ghost" id="btn-lb-back" style="margin-top:14px">BACK</button>
+  </div>
+</div>
+
+<button class="mute" id="btn-mute">🔊</button>
+
+<script>
+// ================================================================
+//  askLio: Spend Control
+//  Intercept fraud. Let valid spend pass. Every click = procurement.
+// ================================================================
+const CV = document.getElementById('c');
+const G = CV.getContext('2d');
+const OV = document.getElementById('ov');
+let W, H, DPR;
+
+function resize(){
+  DPR = window.devicePixelRatio||1;
+  W = window.innerWidth; H = window.innerHeight;
+  CV.width = W*DPR; CV.height = H*DPR;
+  CV.style.width = W+'px'; CV.style.height = H+'px';
+  G.setTransform(DPR,0,0,DPR,0,0);
+}
+resize(); window.addEventListener('resize', resize);
+
+// ── UTILS ──
+function rng(a,b){return a+Math.random()*(b-a)}
+function pick(arr){return arr[Math.floor(Math.random()*arr.length)]}
+function fmtK(n){return n>=1e6?'€'+(n/1e6).toFixed(1)+'M':n>=1000?'€'+(n/1000).toFixed(1)+'K':'€'+n}
+function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML}
+function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
+function lerp(a,b,t){return a+(b-a)*t}
+
+// ── AUDIO ──
+const audio = {
+  ctx:null, on:true,
+  init(){if(this.ctx)return;try{this.ctx=new(window.AudioContext||window.webkitAudioContext)()}catch(e){this.on=false}},
+  t(f,d,w='sine',v=.07){
+    if(!this.on||!this.ctx)return;
+    const o=this.ctx.createOscillator(),g=this.ctx.createGain();
+    o.type=w;o.frequency.value=f;g.gain.setValueAtTime(v,this.ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(.001,this.ctx.currentTime+d);
+    o.connect(g);g.connect(this.ctx.destination);o.start();o.stop(this.ctx.currentTime+d);
+  },
+  intercept(){this.t(600,.06);setTimeout(()=>this.t(900,.08),50)},
+  flag(){this.t(500,.06,'triangle');this.t(700,.08,'triangle')},
+  miss(){this.t(150,.3,'sawtooth',.1)},
+  falsePos(){this.t(200,.15,'square',.06)},
+  combo(){this.t(440,.06);this.t(660,.08);this.t(880,.1)},
+  spawn(){this.t(300,.03,'sine',.02)},
+  wave(){this.t(330,.12);setTimeout(()=>this.t(440,.12),80);setTimeout(()=>this.t(660,.15),160)},
+  gameOver(){this.t(440,.3,'sawtooth',.08);setTimeout(()=>this.t(330,.3,'sawtooth',.08),150);setTimeout(()=>this.t(220,.5,'sawtooth',.08),300)},
+};
+
+// ── PARTICLES ──
+const parts=[];
+function emit(x,y,col,n=10,spd=180,life=.5,sz=3){
+  for(let i=0;i<n;i++){
+    const a=rng(0,Math.PI*2),s=rng(spd*.3,spd);
+    parts.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life,maxLife:life,col,size:rng(1,sz)});
+  }
+}
+const floats=[];
+function addFloat(x,y,txt,col,sz=14){floats.push({x,y,txt,col,sz,life:1.4,maxLife:1.4,vy:-35})}
+
+// ── PROCUREMENT DATA ──
+const VENDORS_GOOD = ['TechFlow Systems','CloudBridge Inc','DataSync Pro','GreenLeaf Supplies','Apex Logistics','CoreStaff HR','BrightMedia Group','SafeGuard Security','NetPrime Solutions','AgileParts Co'];
+const VENDORS_BAD = ['QuickFix Ltd','Shadow Services','FastTrack Imports','Pinnacle Corp','NovaPart GmbH','GhostBill Inc','ShellCo Trading','FakeVend LLC'];
+const CATEGORIES = ['IT','Office','Marketing','Logistics','HR','Facilities','Consulting','Software'];
+
+function genTransaction(wave){
+  const roll = Math.random();
+  const budgetLimit = 50000 + wave * 5000;
+
+  if(roll < 0.35){
+    // FRAUD — must intercept
+    const fraudType = pick(['over_budget','unapproved','duplicate','inflated']);
+    const vendor = fraudType==='unapproved' ? pick(VENDORS_BAD) : pick(VENDORS_GOOD);
+    let amount, reason;
+    switch(fraudType){
+      case 'over_budget':
+        amount = Math.round(rng(budgetLimit*1.1, budgetLimit*3)/100)*100;
+        reason = 'OVER BUDGET';
+        break;
+      case 'unapproved':
+        amount = Math.round(rng(5000,80000)/100)*100;
+        reason = 'UNAPPROVED';
+        break;
+      case 'duplicate':
+        amount = pick([12500,25000,37500,42000,18700,33300,55000,28400]);
+        reason = 'DUPLICATE';
+        break;
+      case 'inflated':
+        amount = Math.round(rng(20000,90000)/100)*100;
+        reason = '+38% ABOVE MARKET';
+        break;
+    }
+    return {vendor, amount, cat:pick(CATEGORIES), type:'fraud', reason, color:'#ef4444', glow:'rgba(239,68,68,.15)'};
+  }
+  else if(roll < 0.5){
+    // SUSPICIOUS — flagging gives bonus
+    const vendor = Math.random()<.5 ? pick(VENDORS_BAD) : pick(VENDORS_GOOD);
+    const amount = Math.round(rng(8000,60000)/100)*100;
+    const reasons = ['UNUSUAL PATTERN','NEW VENDOR','RUSH REQUEST','MISSING REF'];
+    return {vendor, amount, cat:pick(CATEGORIES), type:'suspicious', reason:pick(reasons), color:'#f59e0b', glow:'rgba(245,158,11,.12)'};
+  }
+  else {
+    // VALID — don't touch
+    const vendor = pick(VENDORS_GOOD);
+    const amount = Math.round(rng(1000, budgetLimit*.9)/100)*100;
+    return {vendor, amount, cat:pick(CATEGORIES), type:'valid', reason:'APPROVED', color:'#10b981', glow:'rgba(16,185,129,.08)'};
+  }
+}
+
+// ── TRANSACTION BUBBLE CLASS ──
+class Bubble {
+  constructor(tx, wave){
+    this.tx = tx;
+    this.x = rng(80, W-80);
+    this.y = rng(100, H-140);
+    // Avoid overlaps roughly
+    this.r = clamp(tx.amount/3000, 28, 52);
+    this.maxLife = Math.max(2.5, 5 - wave*0.15);
+    this.life = this.maxLife;
+    this.scale = 0;
+    this.dead = false;
+    this.result = null; // 'intercepted','flagged','missed','auto_approved','false_positive'
+    this.flash = 0;
+    this.hovered = false;
+    this.bobPhase = rng(0, Math.PI*2);
+  }
+
+  update(dt){
+    if(this.dead) return;
+    this.life -= dt;
+    this.bobPhase += dt * 2;
+    if(this.flash > 0) this.flash -= dt;
+    // Scale in
+    if(this.scale < 1) this.scale = Math.min(1, this.scale + dt*4);
+    // Expire
+    if(this.life <= 0){
+      this.dead = true;
+      if(this.tx.type === 'fraud'){
+        this.result = 'missed';
+      } else if(this.tx.type === 'suspicious'){
+        this.result = 'auto_approved'; // suspicious passed unchecked
+      } else {
+        this.result = 'auto_approved'; // valid auto-approved = good
+      }
+    }
+  }
+
+  draw(){
+    if(this.dead) return;
+    const tx = this.tx;
+    const s = this.scale;
+    const bob = Math.sin(this.bobPhase)*2;
+    const cx = this.x, cy = this.y + bob;
+    const r = this.r * s;
+    const pct = this.life / this.maxLife;
+
+    // Glow ring
+    const glowR = r + 8 + (1-pct)*6;
+    G.beginPath();G.arc(cx,cy,glowR,0,Math.PI*2);
+    G.fillStyle = tx.glow;G.fill();
+
+    // Timer ring (countdown arc)
+    G.lineWidth = 3;
+    G.strokeStyle = tx.color;
+    G.globalAlpha = .4;
+    G.beginPath();
+    G.arc(cx, cy, r+4, -Math.PI/2, -Math.PI/2 + Math.PI*2*pct);
+    G.stroke();
+    G.globalAlpha = 1;
+
+    // Inner circle
+    G.beginPath();G.arc(cx,cy,r,0,Math.PI*2);
+    G.fillStyle = this.flash>0?'rgba(255,255,255,.15)':'rgba(15,23,42,.85)';
+    G.fill();
+    G.strokeStyle = tx.color;G.lineWidth = this.hovered?2.5:1.5;
+    G.globalAlpha = this.hovered?1:.7;
+    G.beginPath();G.arc(cx,cy,r,0,Math.PI*2);G.stroke();
+    G.globalAlpha = 1;
+
+    // Hover magnify effect
+    if(this.hovered){
+      G.strokeStyle = tx.color;G.lineWidth=1;G.globalAlpha=.2;
+      G.beginPath();G.arc(cx,cy,r+14,0,Math.PI*2);G.stroke();
+      G.globalAlpha=1;
+    }
+
+    // Amount
+    const amtSize = Math.max(10, Math.min(16, r*.35));
+    G.fillStyle = tx.color;
+    G.font = `900 ${amtSize}px 'Orbitron',sans-serif`;
+    G.textAlign = 'center'; G.textBaseline = 'middle';
+    G.fillText(fmtK(tx.amount), cx, cy - (r>35?6:2));
+
+    // Vendor name (only if big enough)
+    if(r > 30){
+      G.fillStyle = '#94a3b8';
+      G.font = `600 ${Math.max(7,r*.17)}px 'Inter',sans-serif`;
+      G.fillText(tx.vendor.length>16?tx.vendor.slice(0,14)+'…':tx.vendor, cx, cy + amtSize*.6);
+    }
+
+    // Reason tag (for fraud/suspicious)
+    if(tx.type !== 'valid'){
+      const tagY = cy - r - 10;
+      G.font = `700 ${Math.max(7,Math.min(9,r*.18))}px 'Orbitron',sans-serif`;
+      const tw = G.measureText(tx.reason).width;
+      G.fillStyle = tx.color;G.globalAlpha=.15;
+      G.beginPath();
+      const pad=4;
+      G.roundRect(cx-tw/2-pad, tagY-7, tw+pad*2, 14, 3);
+      G.fill();
+      G.globalAlpha=.9;
+      G.fillStyle=tx.color;
+      G.fillText(tx.reason, cx, tagY);
+      G.globalAlpha=1;
+    }
+
+    // Urgency pulse when low time
+    if(pct < .3 && tx.type === 'fraud'){
+      G.strokeStyle = '#ef4444';
+      G.lineWidth = 2;
+      G.globalAlpha = (1-pct/.3)*.4 * (Math.sin(performance.now()*.01)*.5+.5);
+      G.beginPath();G.arc(cx,cy,r+10+rng(0,4),0,Math.PI*2);G.stroke();
+      G.globalAlpha = 1;
+    }
+
+    G.textBaseline = 'alphabetic';
+  }
+
+  hit(mx,my){
+    if(this.dead) return false;
+    return Math.hypot(mx-this.x, my-(this.y+Math.sin(this.bobPhase)*2)) < this.r + 8;
+  }
+
+  intercept(){
+    this.dead = true;
+    this.flash = .2;
+    if(this.tx.type === 'fraud'){
+      this.result = 'intercepted';
+    } else if(this.tx.type === 'suspicious'){
+      this.result = 'flagged';
+    } else {
+      this.result = 'false_positive';
+    }
+  }
+}
+
+// ── GAME ──
+const game = {
+  state: 'menu',
+  bubbles: [],
+  wave: 0,
+  waveTimer: 0,
+  waveDuration: 20,
+  spawnTimer: 0,
+  spawnRate: 1.8,
+  totalScanned: 0,
+  fraudCaught: 0,
+  fraudMissed: 0,
+  falsePosCount: 0,
+  budgetProtected: 0,
+  budgetLost: 0,
+  streak: 0,
+  bestStreak: 0,
+  lives: 5,
+  maxLives: 5,
+  comboTimer: 0,
+  lioAngle: 0,
+  mouseX: -1, mouseY: -1,
+  shakeTimer: 0,
+
+  start(){
+    audio.init();
+    this.state = 'play';
+    this.bubbles = [];
+    this.wave = 0; this.waveTimer = 0;
+    this.spawnTimer = 0;
+    this.totalScanned = 0; this.fraudCaught = 0; this.fraudMissed = 0;
+    this.falsePosCount = 0; this.budgetProtected = 0; this.budgetLost = 0;
+    this.streak = 0; this.bestStreak = 0;
+    this.lives = this.maxLives; this.comboTimer = 0;
+    this.shakeTimer = 0;
+    parts.length = 0; floats.length = 0;
+    OV.classList.remove('menu');
+    document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+    this._nextWave();
+  },
+
+  _nextWave(){
+    this.wave++;
+    this.waveTimer = this.waveDuration;
+    this.spawnRate = Math.max(.6, 1.8 - this.wave*.12);
+    this.spawnTimer = .5;
+    audio.wave();
+  },
+
+  update(dt){
+    if(this.state !== 'play' && this.state !== 'dying') return;
+
+    this.lioAngle += dt * .8;
+    if(this.comboTimer > 0) this.comboTimer -= dt;
+    if(this.shakeTimer > 0) this.shakeTimer -= dt;
+
+    // Wave timer
+    this.waveTimer -= dt;
+    if(this.waveTimer <= 0 && this.state === 'play' && this.bubbles.every(b=>b.dead)){
+      this._nextWave();
+    }
+
+    // Spawn
+    if(this.waveTimer > 2 && this.state === 'play'){
+      this.spawnTimer -= dt;
+      if(this.spawnTimer <= 0){
+        this.spawnTimer = this.spawnRate + rng(-.3,.3);
+        this._spawn();
+      }
+    }
+
+    // Update bubbles
+    for(const b of this.bubbles){
+      b.hovered = !b.dead && b.hit(this.mouseX, this.mouseY);
+      b.update(dt);
+      if(b.dead && b.result && !b._counted){
+        b._counted = true;
+        this._processResult(b);
+      }
+    }
+
+    // Clean old bubbles (keep for a bit for death animation)
+    this.bubbles = this.bubbles.filter(b => !b.dead || b.flash > 0);
+
+    // Particles & floats
+    for(let i=parts.length-1;i>=0;i--){
+      const p=parts[i];p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=200*dt;p.life-=dt;
+      if(p.life<=0)parts.splice(i,1);
+    }
+    for(let i=floats.length-1;i>=0;i--){
+      const f=floats[i];f.y+=f.vy*dt;f.life-=dt;
+      if(f.life<=0)floats.splice(i,1);
+    }
+  },
+
+  _spawn(){
+    const tx = genTransaction(this.wave);
+    const b = new Bubble(tx, this.wave);
+    // Avoid overlap with existing bubbles
+    let tries = 0;
+    while(tries < 15){
+      let ok = true;
+      for(const ob of this.bubbles){
+        if(!ob.dead && Math.hypot(b.x-ob.x, b.y-ob.y) < b.r+ob.r+20){ok=false;break}
+      }
+      if(ok) break;
+      b.x = rng(80, W-80);
+      b.y = rng(100, H-140);
+      tries++;
+    }
+    this.bubbles.push(b);
+    this.totalScanned++;
+    audio.spawn();
+  },
+
+  _processResult(b){
+    switch(b.result){
+      case 'intercepted':
+        this.fraudCaught++;
+        this.budgetProtected += b.tx.amount;
+        this.streak++;
+        if(this.streak > this.bestStreak) this.bestStreak = this.streak;
+        this.comboTimer = 2;
+        emit(b.x,b.y,b.tx.color,14,200,.5,4);
+        addFloat(b.x,b.y-b.r-8,'+'+fmtK(b.tx.amount)+' SAVED','#10b981',14);
+        if(this.streak>=3){
+          addFloat(b.x,b.y-b.r-26,'🔥 ×'+this.streak,'#f59e0b',12);
+          audio.combo();
+        } else {
+          audio.intercept();
+        }
+        break;
+      case 'flagged':
+        this.fraudCaught++;
+        this.budgetProtected += Math.floor(b.tx.amount*.5);
+        this.streak++;
+        if(this.streak > this.bestStreak) this.bestStreak = this.streak;
+        emit(b.x,b.y,'#f59e0b',10,150,.4,3);
+        addFloat(b.x,b.y-b.r-8,'FLAGGED ⚑','#f59e0b',13);
+        audio.flag();
+        break;
+      case 'missed':
+        this.fraudMissed++;
+        this.budgetLost += b.tx.amount;
+        this.lives = Math.max(0, this.lives - 1);
+        this.streak = 0;
+        this.shakeTimer = .3;
+        emit(b.x,b.y,'#ef4444',8,100,.3,2);
+        addFloat(b.x,b.y-b.r-8,'-'+fmtK(b.tx.amount)+' LOST','#ef4444',15);
+        audio.miss();
+        if(this.lives <= 0 && this.state === 'play'){
+          this.state = 'dying';
+          setTimeout(()=>this._gameOver(), 600);
+          return;
+        }
+        break;
+      case 'false_positive':
+        this.falsePosCount++;
+        this.streak = 0;
+        emit(b.x,b.y,'#64748b',6,80,.3,2);
+        addFloat(b.x,b.y-b.r-8,'FALSE ALARM','#64748b',12);
+        audio.falsePos();
+        break;
+      case 'auto_approved':
+        // Valid auto-approved = good (no action needed)
+        // Suspicious auto-approved = mild miss (no penalty)
+        break;
+    }
+  },
+
+  handleClick(mx,my){
+    if(this.state !== 'play') return;
+    // Check bubbles (front to back = last drawn first)
+    for(let i=this.bubbles.length-1;i>=0;i--){
+      const b = this.bubbles[i];
+      if(b.hit(mx,my)){
+        b.intercept();
+        return;
+      }
+    }
+  },
+
+  _gameOver(){
+    this.state = 'over';
+    audio.gameOver();
+    const total = this.fraudCaught + this.fraudMissed + this.falsePosCount;
+    const acc = total > 0 ? Math.round(this.fraudCaught/Math.max(1,this.fraudCaught+this.fraudMissed+this.falsePosCount)*100) : 100;
+
+    document.getElementById('final-score').textContent = fmtK(this.budgetProtected);
+    document.getElementById('st-total').textContent = this.totalScanned;
+    document.getElementById('st-fraud').textContent = this.fraudCaught;
+    document.getElementById('st-missed').textContent = this.fraudMissed;
+    document.getElementById('st-false').textContent = this.falsePosCount;
+    document.getElementById('st-acc').textContent = acc+'%';
+    document.getElementById('st-budget').textContent = fmtK(this.budgetProtected);
+    document.getElementById('st-streak').textContent = this.bestStreak;
+
+    document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+    document.getElementById('s-over').classList.add('active');
+    OV.classList.add('menu');
+    document.getElementById('inp-name').value='';
+    document.getElementById('inp-name').focus();
+  },
+
+  draw(){
+    G.save();
+    if(this.shakeTimer > 0){
+      G.translate(rng(-3,3)*this.shakeTimer*10, rng(-3,3)*this.shakeTimer*10);
+    }
+
+    // Background
+    G.fillStyle='#060a16';G.fillRect(0,0,W,H);
+
+    // Subtle grid
+    G.strokeStyle='rgba(99,102,241,.02)';G.lineWidth=1;
+    for(let x=0;x<W;x+=50){G.beginPath();G.moveTo(x,0);G.lineTo(x,H);G.stroke()}
+    for(let y=0;y<H;y+=50){G.beginPath();G.moveTo(0,y);G.lineTo(W,y);G.stroke()}
+
+    if(this.state==='play'||this.state==='dying'||this.state==='over'){
+      // Lio AI radar sweep
+      this._drawRadar();
+
+      // Bubbles
+      for(const b of this.bubbles) b.draw();
+
+      // Particles
+      for(const p of parts){
+        G.globalAlpha=Math.max(0,p.life/p.maxLife);
+        G.fillStyle=p.col;G.beginPath();G.arc(p.x,p.y,p.size,0,Math.PI*2);G.fill();
+      }
+      G.globalAlpha=1;
+
+      // Floats
+      for(const f of floats){
+        G.globalAlpha=clamp(f.life/f.maxLife*2,0,1);
+        G.fillStyle=f.col;G.font=`800 ${f.sz}px 'Inter',sans-serif`;G.textAlign='center';
+        G.fillText(f.txt,f.x,f.y);
+      }
+      G.globalAlpha=1;
+
+      // HUD
+      this._drawHUD();
+    }
+    G.restore();
+  },
+
+  _drawRadar(){
+    // Sweeping Lio scanner line
+    const cx=W/2, cy=H/2;
+    const maxR = Math.hypot(W,H)/2;
+    const angle = this.lioAngle;
+
+    // Sweep gradient
+    const grad = G.createConicGradient(angle, cx, cy);
+    grad.addColorStop(0, 'rgba(99,102,241,.06)');
+    grad.addColorStop(.08, 'rgba(99,102,241,0)');
+    grad.addColorStop(1, 'rgba(99,102,241,0)');
+    G.fillStyle = grad;
+    G.fillRect(0,0,W,H);
+
+    // Sweep line
+    G.strokeStyle='rgba(99,102,241,.12)';G.lineWidth=1;
+    G.beginPath();
+    G.moveTo(cx,cy);
+    G.lineTo(cx+Math.cos(angle)*maxR, cy+Math.sin(angle)*maxR);
+    G.stroke();
+
+    // Center dot
+    G.fillStyle='rgba(99,102,241,.08)';
+    G.beginPath();G.arc(cx,cy,3,0,Math.PI*2);G.fill();
+  },
+
+  _drawHUD(){
+    // Top HUD bar
+    G.fillStyle='rgba(6,10,22,.75)';
+    G.fillRect(0,0,W,52);
+    G.strokeStyle='rgba(255,255,255,.04)';G.lineWidth=1;
+    G.beginPath();G.moveTo(0,52);G.lineTo(W,52);G.stroke();
+
+    // Budget protected
+    G.fillStyle='#10b981';G.font="900 16px 'Orbitron',sans-serif";G.textAlign='left';
+    G.fillText(fmtK(this.budgetProtected),14,22);
+    G.fillStyle='#475569';G.font="600 8px 'Inter',sans-serif";
+    G.fillText('PROTECTED',14,36);
+
+    // Wave
+    G.fillStyle='#6366f1';G.font="700 12px 'Orbitron',sans-serif";G.textAlign='center';
+    G.fillText('WAVE '+this.wave,W/2,20);
+    // Timer
+    if(this.waveTimer > 0){
+      G.fillStyle='#475569';G.font="600 9px 'Inter',sans-serif";
+      G.fillText(Math.ceil(this.waveTimer)+'s',W/2,36);
+    }
+
+    // Accuracy
+    const total=this.fraudCaught+this.fraudMissed+this.falsePosCount;
+    const acc=total>0?Math.round(this.fraudCaught/Math.max(1,total)*100):100;
+    G.fillStyle=acc>=80?'#22d3ee':acc>=60?'#f59e0b':'#ef4444';
+    G.font="900 16px 'Orbitron',sans-serif";G.textAlign='right';
+    G.fillText(acc+'%',W-80,22);
+    G.fillStyle='#475569';G.font="600 8px 'Inter',sans-serif";
+    G.fillText('ACCURACY',W-80,36);
+
+    // Lives
+    const lx = W-24;
+    for(let i=0;i<this.maxLives;i++){
+      G.fillStyle = i<this.lives?'#ef4444':'rgba(239,68,68,.15)';
+      G.beginPath();G.arc(lx, 12+i*10, 3, 0, Math.PI*2);G.fill();
+    }
+
+    // Streak
+    if(this.streak >= 2 && this.comboTimer > 0){
+      G.fillStyle='#f59e0b';G.font="900 14px 'Orbitron',sans-serif";G.textAlign='center';
+      G.globalAlpha=clamp(this.comboTimer,0,1);
+      G.fillText('🔥 STREAK ×'+this.streak,W/2,H-20);
+      G.globalAlpha=1;
+    }
+
+    // Fraud missed warning
+    if(this.fraudMissed > 0){
+      G.fillStyle='#ef4444';G.font="600 9px 'Inter',sans-serif";G.textAlign='left';
+      G.globalAlpha=.6;
+      G.fillText(this.fraudMissed+' fraud missed',14,48);
+      G.globalAlpha=1;
+    }
+  }
+};
+
+// ── BINDINGS ──
+document.getElementById('btn-start').onclick = ()=>game.start();
+document.getElementById('btn-retry').onclick = ()=>game.start();
+document.getElementById('btn-save').onclick = ()=>saveLB();
+document.getElementById('btn-lb').onclick = ()=>showLB();
+document.getElementById('btn-lb-back').onclick = ()=>{
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('s-over').classList.add('active');
+};
+document.getElementById('inp-name').onkeydown = e=>{if(e.key==='Enter')saveLB()};
+document.getElementById('btn-mute').onclick = ()=>{audio.on=!audio.on;document.getElementById('btn-mute').textContent=audio.on?'🔊':'🔇'};
+
+CV.addEventListener('click', e=>{
+  const r=CV.getBoundingClientRect();
+  game.handleClick(e.clientX-r.left, e.clientY-r.top);
+});
+CV.addEventListener('mousemove', e=>{
+  const r=CV.getBoundingClientRect();
+  game.mouseX=e.clientX-r.left; game.mouseY=e.clientY-r.top;
+});
+CV.addEventListener('mouseleave', ()=>{game.mouseX=-1;game.mouseY=-1});
+CV.addEventListener('touchstart', e=>{
+  e.preventDefault();
+  const t=e.touches[0],r=CV.getBoundingClientRect();
+  game.handleClick(t.clientX-r.left, t.clientY-r.top);
+},{passive:false});
+
+document.addEventListener('keydown', e=>{
+  if(e.code==='Space' && game.state==='menu'){e.preventDefault();game.start()}
+});
+
+function saveLB(){
+  const name=(document.getElementById('inp-name').value||'').trim()||'ANON';
+  const lb=JSON.parse(localStorage.getItem('sctrl-lb')||'[]');
+  lb.push({name,score:game.budgetProtected});
+  lb.sort((a,b)=>b.score-a.score);
+  if(lb.length>10)lb.length=10;
+  localStorage.setItem('sctrl-lb',JSON.stringify(lb));
+  showLB();
+}
+function showLB(){
+  const lb=JSON.parse(localStorage.getItem('sctrl-lb')||'[]');
+  document.getElementById('lb-list').innerHTML=lb.length===0?'<div style="color:#475569;text-align:center;padding:20px">No scores yet</div>':
+    lb.map((e,i)=>`<div class="lb-row"><span class="lb-rank">${i+1}</span><span class="lb-name">${esc(e.name)}</span><span class="lb-sc">${fmtK(e.score)}</span></div>`).join('');
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('s-lb').classList.add('active');
+  OV.classList.add('menu');
+}
+
+// ── GAME LOOP ──
+let lastT = performance.now();
+(function loop(now){
+  const dt = Math.min(.1,(now-lastT)/1000);
+  lastT = now;
+  game.update(dt);
+  game.draw();
+  requestAnimationFrame(loop);
+})(lastT);
+</script>
+</body>
+</html>

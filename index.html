@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
+<title>Lio – Wer wird Procurement-Millionär?</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;overflow:hidden;background:#06081a;font-family:'Inter',sans-serif;user-select:none;color:#e2e8f0}
+
+/* ── SCREENS ── */
+.scr{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:0;pointer-events:none;visibility:hidden;transition:opacity .4s,visibility .4s;z-index:1}
+.scr.on{opacity:1;pointer-events:auto;visibility:visible;z-index:10}
+
+/* ── BACKGROUND ── */
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 50% 30%,#0c1445 0%,#06081a 70%);z-index:0}
+body::after{content:'';position:fixed;inset:0;background:repeating-conic-gradient(rgba(99,102,241,.012) 0% 25%,transparent 0% 50%) 0 0/60px 60px;z-index:0}
+
+/* ── PARTICLE CANVAS ── */
+#fx-canvas{position:fixed;inset:0;z-index:35;pointer-events:none}
+
+/* ── TITLE SCREEN ── */
+#s-title{gap:14px;background:radial-gradient(ellipse at 50% 35%,#0f1a5a 0%,#06081a 65%)}
+.host-frame{position:relative;width:clamp(100px,14vw,160px);height:clamp(100px,14vw,160px);border-radius:50%;overflow:hidden;border:3px solid rgba(99,102,241,.5);box-shadow:0 0 40px rgba(99,102,241,.25),0 0 80px rgba(99,102,241,.1)}
+.host-frame img{width:100%;height:100%;object-fit:cover}
+.title-main{font-family:'Orbitron',sans-serif;font-size:clamp(18px,3.2vw,42px);font-weight:900;text-align:center;line-height:1.15;text-transform:uppercase;background:linear-gradient(135deg,#f59e0b,#fbbf24,#f59e0b);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;filter:drop-shadow(0 0 20px rgba(245,158,11,.3))}
+.title-sub{font-family:'Orbitron',sans-serif;font-size:clamp(10px,1.4vw,16px);font-weight:700;color:#6366f1;letter-spacing:2px}
+.vladi-says{color:#94a3b8;font-size:clamp(11px,1.5vw,15px);text-align:center;max-width:500px;line-height:1.5;font-style:italic;min-height:44px}
+.lang-row{display:flex;gap:8px}
+.lang-btn{padding:8px 20px;font-family:'Inter',sans-serif;font-size:13px;font-weight:700;border:2px solid rgba(99,102,241,.3);border-radius:8px;background:rgba(99,102,241,.08);color:#94a3b8;cursor:pointer;transition:.2s}
+.lang-btn.on{border-color:#6366f1;background:rgba(99,102,241,.2);color:#e2e8f0}
+.lang-btn:hover{border-color:#6366f1}
+.name-input{width:clamp(200px,30vw,320px);padding:10px 16px;font-family:'Inter',sans-serif;font-size:15px;font-weight:600;color:#e2e8f0;background:rgba(99,102,241,.1);border:2px solid rgba(99,102,241,.3);border-radius:10px;outline:none;text-align:center;transition:.2s}
+.name-input::placeholder{color:#475569;font-weight:400}
+.name-input:focus{border-color:#6366f1;background:rgba(99,102,241,.15);box-shadow:0 0 20px rgba(99,102,241,.15)}
+.big-btn{padding:14px 48px;font-family:'Orbitron',sans-serif;font-size:clamp(13px,1.8vw,18px);font-weight:700;color:#fff;background:linear-gradient(135deg,#f59e0b,#d97706);border:none;border-radius:50px;cursor:pointer;transition:.15s;box-shadow:0 0 30px rgba(245,158,11,.25);margin-top:6px}
+.big-btn:hover{transform:scale(1.05);box-shadow:0 0 45px rgba(245,158,11,.4)}
+.big-btn:active{transform:scale(.96)}
+.title-btns{display:flex;gap:10px;align-items:center}
+.title-ghost{padding:10px 22px;font-family:'Orbitron',sans-serif;font-size:clamp(10px,1.2vw,13px);font-weight:700;color:#64748b;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:50px;cursor:pointer;transition:.2s}
+.title-ghost:hover{color:#94a3b8;border-color:rgba(255,255,255,.15)}
+.brand{color:#475569;font-size:11px;display:flex;align-items:center;gap:7px;margin-top:12px}
+.brand b{font-family:'Orbitron',sans-serif;font-size:13px;background:linear-gradient(90deg,#6366f1,#22d3ee);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+
+/* ── GAME SCREEN ── */
+#s-game{display:grid;grid-template-rows:auto 1fr;grid-template-columns:1fr clamp(140px,18vw,200px);gap:0;padding:8px;background:#06081a}
+
+/* Top bar */
+.top-bar{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;padding:0 4px 6px}
+.lifelines{display:flex;gap:6px}
+.ll{width:clamp(36px,5vw,48px);height:clamp(36px,5vw,48px);border-radius:50%;border:2px solid rgba(245,158,11,.4);background:rgba(245,158,11,.06);color:#fbbf24;font-size:clamp(10px,1.2vw,13px);font-weight:800;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:.2s;font-family:'Inter',sans-serif}
+.ll:hover:not(.used){border-color:#f59e0b;background:rgba(245,158,11,.15);transform:scale(1.08)}
+.ll.used{opacity:.25;cursor:default;border-color:rgba(255,255,255,.1);color:#475569}
+.top-r{display:flex;gap:6px;align-items:center}
+.sm-btn{padding:5px 12px;font-size:11px;font-weight:700;border:1px solid rgba(255,255,255,.1);border-radius:6px;background:rgba(255,255,255,.04);color:#94a3b8;cursor:pointer;transition:.2s}
+.sm-btn:hover{background:rgba(255,255,255,.08);color:#e2e8f0}
+
+/* Main area */
+.game-main{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:clamp(6px,1.2vh,14px);padding-bottom:clamp(8px,2vh,20px);overflow:hidden}
+
+/* Host + speech */
+.host-row{display:flex;align-items:center;gap:clamp(8px,1.2vw,16px);max-width:680px;width:100%}
+.host-sm{width:clamp(44px,5.5vw,64px);height:clamp(44px,5.5vw,64px);border-radius:50%;overflow:hidden;border:2px solid rgba(99,102,241,.4);box-shadow:0 0 20px rgba(99,102,241,.15);flex-shrink:0}
+.host-sm img{width:100%;height:100%;object-fit:cover}
+.speech{flex:1;background:rgba(99,102,241,.08);border:1px solid rgba(99,102,241,.15);border-radius:12px;padding:clamp(6px,1vh,12px) clamp(10px,1.2vw,16px);color:#cbd5e1;font-size:clamp(11px,1.3vw,14px);line-height:1.45;min-height:36px;position:relative}
+.speech::before{content:'';position:absolute;left:-7px;top:50%;transform:translateY(-50%);border:6px solid transparent;border-right-color:rgba(99,102,241,.15)}
+
+/* Timer bar */
+.timer-wrap{width:100%;max-width:680px;height:6px;background:rgba(255,255,255,.06);border-radius:3px;overflow:hidden}
+.timer-fill{height:100%;width:100%;background:linear-gradient(90deg,#22c55e,#4ade80);border-radius:3px;transition:width .1s linear}
+.timer-fill.warning{background:linear-gradient(90deg,#f59e0b,#fbbf24)}
+.timer-fill.danger{background:linear-gradient(90deg,#ef4444,#f87171);animation:timer-pulse .5s ease infinite}
+@keyframes timer-pulse{0%,100%{opacity:1}50%{opacity:.6}}
+
+/* Question bar */
+.q-bar{width:100%;max-width:680px;text-align:center;padding:clamp(10px,1.5vh,18px) clamp(16px,2vw,28px);background:linear-gradient(135deg,rgba(15,23,60,.9),rgba(20,30,80,.9));border:2px solid rgba(99,102,241,.25);border-radius:14px;font-size:clamp(13px,1.6vw,18px);font-weight:700;color:#f1f5f9;line-height:1.4;box-shadow:0 4px 30px rgba(0,0,0,.3)}
+
+/* Answer grid */
+.ans-grid{display:grid;grid-template-columns:1fr 1fr;gap:clamp(5px,.8vh,10px) clamp(6px,1vw,12px);width:100%;max-width:680px}
+.ans{position:relative;padding:clamp(10px,1.3vh,16px) clamp(12px,1.5vw,20px) clamp(10px,1.3vh,16px) clamp(36px,4.5vw,52px);background:linear-gradient(135deg,rgba(15,23,60,.85),rgba(20,28,70,.85));border:2px solid rgba(99,102,241,.2);border-radius:12px;cursor:pointer;transition:border-color .2s,background .2s,transform .1s;font-size:clamp(12px,1.35vw,16px);font-weight:600;color:#cbd5e1;line-height:1.35}
+.ans:hover:not(.locked):not(.dim):not(.correct):not(.wrong){border-color:rgba(245,158,11,.5);background:rgba(245,158,11,.06);transform:scale(1.015)}
+.ans .letter{position:absolute;left:clamp(8px,1vw,14px);top:50%;transform:translateY(-50%);font-family:'Orbitron',sans-serif;font-size:clamp(11px,1.2vw,14px);font-weight:900;color:#f59e0b}
+.ans.locked{border-color:#f59e0b;background:rgba(245,158,11,.12);animation:pulse-orange 1s ease infinite}
+.ans.correct{border-color:#22c55e;background:rgba(34,197,94,.15);color:#fff;animation:pulse-green .6s ease 2}
+.ans.wrong{border-color:#ef4444;background:rgba(239,68,68,.15);color:#ef4444}
+.ans.dim{opacity:.15;pointer-events:none}
+@keyframes pulse-orange{0%,100%{box-shadow:0 0 10px rgba(245,158,11,.2)}50%{box-shadow:0 0 25px rgba(245,158,11,.4)}}
+@keyframes pulse-green{0%,100%{box-shadow:0 0 10px rgba(34,197,94,.2)}50%{box-shadow:0 0 30px rgba(34,197,94,.5)}}
+
+/* Screen shake */
+@keyframes shake{0%,100%{transform:translate(0)}10%,50%,90%{transform:translate(-4px,2px)}30%,70%{transform:translate(4px,-2px)}60%{transform:translate(-2px,4px)}}
+.shake{animation:shake .45s ease-in-out}
+
+/* Level-up flash */
+@keyframes level-flash{0%{opacity:0}15%{opacity:1}100%{opacity:0}}
+.level-flash{position:fixed;inset:0;background:radial-gradient(circle,rgba(34,197,94,.15),transparent 70%);z-index:20;pointer-events:none;opacity:0;animation:level-flash .8s ease-out forwards}
+.level-flash.wrong-flash{background:radial-gradient(circle,rgba(239,68,68,.2),transparent 70%)}
+
+/* Money ladder */
+.ladder{display:flex;flex-direction:column;gap:2px;justify-content:flex-end;padding:8px 6px;overflow-y:auto}
+.lv{display:flex;align-items:center;justify-content:space-between;padding:clamp(3px,.5vh,6px) clamp(6px,.8vw,10px);border-radius:6px;font-family:'Orbitron',sans-serif;font-size:clamp(8px,.95vw,11px);font-weight:700;color:#334155;transition:.3s;white-space:nowrap;gap:4px}
+.lv .num{min-width:16px;text-align:right}
+.lv .amt{text-align:right}
+.lv.safe{color:#f59e0b;border:1px solid rgba(245,158,11,.15)}
+.lv.cur{color:#fff;background:rgba(99,102,241,.25);border:1px solid rgba(99,102,241,.5);box-shadow:0 0 12px rgba(99,102,241,.2)}
+.lv.done{color:#22c55e;opacity:.5}
+.lv.cur.safe{border-color:#f59e0b;background:rgba(245,158,11,.15);color:#fbbf24}
+
+/* Overlays / Modals */
+.modal{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;background:rgba(6,8,26,.8);opacity:0;pointer-events:none;transition:opacity .3s}
+.modal.on{opacity:1;pointer-events:auto}
+.modal-box{background:linear-gradient(135deg,#0c1445,#111a52);border:2px solid rgba(99,102,241,.25);border-radius:16px;padding:clamp(16px,2.5vw,32px);max-width:460px;width:90%;text-align:center}
+.modal-box h2{font-family:'Orbitron',sans-serif;font-size:clamp(16px,2.2vw,24px);font-weight:900;margin-bottom:12px}
+.aud-bars{display:flex;align-items:flex-end;justify-content:center;gap:clamp(12px,2vw,24px);height:120px;margin:16px 0}
+.aud-col{display:flex;flex-direction:column;align-items:center;gap:4px}
+.aud-fill{width:clamp(32px,5vw,52px);background:linear-gradient(to top,#6366f1,#818cf8);border-radius:6px 6px 0 0;transition:height .8s ease}
+.aud-lbl{font-family:'Orbitron',sans-serif;font-size:clamp(10px,1.2vw,13px);font-weight:700;color:#f59e0b}
+.aud-pct{font-size:clamp(11px,1.3vw,14px);font-weight:800;color:#e2e8f0}
+.phone-text{font-size:clamp(12px,1.4vw,16px);color:#cbd5e1;line-height:1.6;margin:12px 0;font-style:italic}
+.phone-name{font-family:'Orbitron',sans-serif;font-size:clamp(10px,1.1vw,13px);color:#6366f1;margin-bottom:8px}
+
+/* Leaderboard modal */
+.lb-list{text-align:left;margin:12px 0}
+.lb-row{display:flex;align-items:center;gap:10px;padding:6px 10px;border-radius:8px;font-size:clamp(11px,1.2vw,14px);font-weight:600;transition:.2s}
+.lb-row:nth-child(odd){background:rgba(99,102,241,.06)}
+.lb-rank{font-family:'Orbitron',sans-serif;font-weight:900;min-width:28px;text-align:center;font-size:clamp(12px,1.3vw,15px)}
+.lb-rank.gold{color:#f59e0b}.lb-rank.silver{color:#94a3b8}.lb-rank.bronze{color:#cd7f32}
+.lb-name{flex:1;color:#cbd5e1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lb-score{font-family:'Orbitron',sans-serif;color:#22c55e;font-weight:700;font-size:clamp(10px,1.1vw,13px)}
+.lb-empty{color:#475569;font-style:italic;padding:20px 0}
+
+/* Game over */
+#s-over{gap:10px;background:radial-gradient(ellipse at 50% 40%,#0f1a5a 0%,#06081a 65%)}
+.go-label{font-family:'Orbitron',sans-serif;font-size:clamp(14px,2vw,22px);color:#f59e0b;letter-spacing:2px}
+.go-amount{font-family:'Orbitron',sans-serif;font-size:clamp(28px,5vw,56px);font-weight:900;background:linear-gradient(135deg,#22c55e,#10b981);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;filter:drop-shadow(0 0 20px rgba(34,197,94,.3))}
+.go-amount.lost{background:linear-gradient(135deg,#ef4444,#f87171);-webkit-background-clip:text;background-clip:text}
+.go-team{font-family:'Orbitron',sans-serif;font-size:clamp(12px,1.5vw,17px);color:#6366f1;margin-bottom:2px}
+.go-sub{color:#64748b;font-size:clamp(11px,1.3vw,14px);max-width:420px;text-align:center;line-height:1.5}
+.go-btns{display:flex;gap:10px;margin-top:8px;flex-wrap:wrap;justify-content:center}
+.go-btn{padding:10px 28px;font-family:'Orbitron',sans-serif;font-size:clamp(11px,1.3vw,14px);font-weight:700;border:none;border-radius:50px;cursor:pointer;transition:.15s}
+.go-btn:hover{transform:scale(1.05)}
+.go-btn.primary{background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;box-shadow:0 0 20px rgba(245,158,11,.2)}
+.go-btn.ghost{background:rgba(255,255,255,.06);color:#94a3b8;border:1px solid rgba(255,255,255,.1)}
+</style>
+</head>
+<body>
+
+<!-- Particle effects canvas -->
+<canvas id="fx-canvas"></canvas>
+
+<!-- ═══ TITLE ═══ -->
+<div class="scr on" id="s-title">
+  <div class="host-frame"><img src="Vladimir%20Keil.webp" alt="Vladi"></div>
+  <div class="title-sub">POWERED BY LIO</div>
+  <div class="title-main">WER WIRD<br>PROCUREMENT-<br>MILLIONÄR?</div>
+  <div class="vladi-says" id="title-speech"></div>
+  <div class="lang-row">
+    <button class="lang-btn on" data-lang="de" onclick="setLang('de')">🇩🇪 Deutsch</button>
+    <button class="lang-btn" data-lang="en" onclick="setLang('en')">🇬🇧 English</button>
+  </div>
+  <input type="text" class="name-input" id="team-name" maxlength="20">
+  <div class="title-btns">
+    <button class="big-btn" id="btn-go" onclick="startGame()"></button>
+    <button class="title-ghost" id="btn-lb-title" onclick="showLBModal()"></button>
+  </div>
+  <div class="brand">Powered by <b>Lio</b></div>
+</div>
+
+<!-- ═══ GAME ═══ -->
+<div class="scr" id="s-game">
+  <div class="top-bar">
+    <div class="lifelines">
+      <button class="ll" id="ll-50" onclick="use5050()" title="50:50">50:50</button>
+      <button class="ll" id="ll-ph" onclick="usePhone()" title="Phone">📞</button>
+      <button class="ll" id="ll-au" onclick="useAudience()" title="Audience">👥</button>
+    </div>
+    <div class="top-r">
+      <button class="sm-btn" onclick="toggleLang()" id="lang-tog">EN</button>
+      <button class="sm-btn" onclick="toggleMute()" id="mute-btn">🔊</button>
+    </div>
+  </div>
+  <div class="game-main">
+    <div class="host-row">
+      <div class="host-sm"><img src="Vladimir%20Keil.webp" alt="Vladi"></div>
+      <div class="speech" id="g-speech"></div>
+    </div>
+    <div class="timer-wrap"><div class="timer-fill" id="timer-fill"></div></div>
+    <div class="q-bar" id="q-text"></div>
+    <div class="ans-grid" id="ans-grid">
+      <div class="ans" data-i="0" onclick="pick(0)"><span class="letter">A:</span><span class="atxt" id="a0"></span></div>
+      <div class="ans" data-i="1" onclick="pick(1)"><span class="letter">B:</span><span class="atxt" id="a1"></span></div>
+      <div class="ans" data-i="2" onclick="pick(2)"><span class="letter">C:</span><span class="atxt" id="a2"></span></div>
+      <div class="ans" data-i="3" onclick="pick(3)"><span class="letter">D:</span><span class="atxt" id="a3"></span></div>
+    </div>
+  </div>
+  <div class="ladder" id="ladder"></div>
+</div>
+
+<!-- ═══ MODALS ═══ -->
+<div class="modal" id="m-aud">
+  <div class="modal-box">
+    <h2 id="aud-title"></h2>
+    <div class="aud-bars" id="aud-bars"></div>
+    <button class="go-btn primary" onclick="closeModal('m-aud')" style="margin-top:8px">OK</button>
+  </div>
+</div>
+<div class="modal" id="m-phone">
+  <div class="modal-box">
+    <h2>📞</h2>
+    <div class="phone-name" id="ph-name"></div>
+    <div class="phone-text" id="ph-text"></div>
+    <button class="go-btn primary" onclick="closeModal('m-phone')" style="margin-top:8px">OK</button>
+  </div>
+</div>
+<div class="modal" id="m-lb">
+  <div class="modal-box" style="max-width:500px">
+    <h2 id="lb-modal-title">🏆</h2>
+    <div class="lb-list" id="lb-list"></div>
+    <button class="go-btn primary" onclick="closeModal('m-lb')" style="margin-top:12px">OK</button>
+  </div>
+</div>
+
+<!-- ═══ GAME OVER ═══ -->
+<div class="scr" id="s-over">
+  <div class="host-frame"><img src="Vladimir%20Keil.webp" alt="Vladi"></div>
+  <div class="go-team" id="go-team"></div>
+  <div class="go-label" id="go-label"></div>
+  <div class="go-amount" id="go-amount"></div>
+  <div class="go-sub" id="go-sub"></div>
+  <div class="go-btns">
+    <button class="go-btn primary" id="btn-again" onclick="backToTitle()"></button>
+    <button class="go-btn ghost" id="btn-lb" onclick="showLBModal()"></button>
+  </div>
+  <div class="brand" style="margin-top:16px">Powered by <b>Lio</b></div>
+</div>
+
+<script>
+// ════════════════════════════════════════════════
+//  Lio – Wer wird Procurement-Millionär? v2
+// ════════════════════════════════════════════════
+
+// ── LANGUAGE ──
+let lang='de';
+const T={
+  de:{
+    start:'SPIEL STARTEN',play_again:'NOCHMAL SPIELEN',leaderboard:'BESTENLISTE',
+    welcome:'"Willkommen! Ich bin Vladi, und heute teste ich euer Procurement-Wissen. Seid ihr bereit für die Million?"',
+    name_ph:'Wie heißt du?',
+    q_intro:['Fangen wir leicht an...','Noch eine zum Aufwärmen!','Wird schon spannender!','Das solltet ihr wissen...','Letzte leichte Frage!',
+      'Sicherheitsstufe! Ab hier wird\'s ernst.','Jetzt braucht ihr echtes Wissen!','Kennt ihr eure Procurement-Fakten?','Das ist schon Fortgeschritten!','Auf zur zweiten Sicherheitsstufe!',
+      'Hier trennt sich die Spreu vom Weizen!','Procurement-Profi gefragt!','Nur noch drei bis zur Million...','Fast geschafft! Traut ihr euch?','DIE MILLIONENFRAGE!'],
+    correct:['Richtig! 🎉','Genau! Weiter geht\'s!','Korrekt! 💪','Sehr gut!','Bravo! 👏','Perfekt!','Stark! 🔥','Procurement-Profi!'],
+    wrong:'Leider falsch!',
+    timeup:'Die Zeit ist abgelaufen!',
+    won:'IHR HABT GEWONNEN!',lost:'SPIEL VORBEI',
+    won_sub:'"Unglaublich! Ihr seid echte Procurement-Profis! Kommt zu Lio, wir brauchen euch!"',
+    lost_sub_safe:'"Nicht schlecht! Ihr geht mit {amt} nach Hause. Beim nächsten Mal schafft ihr mehr!"',
+    lost_sub_zero:'"Das war wohl nichts! Aber hey, beim nächsten Mal wird\'s besser!"',
+    aud_title:'Publikums-Voting',
+    phone_names:['Max, Head of Engineering','Pascal, Customer Success','Seema, a16z Partner','Till, Lio Co-Founder','Lukas, Lio CTO'],
+    phone_pre:'Hmm, ich bin mir ziemlich sicher, dass es ',phone_suf:' ist!',
+    safe_msg:'Sicherheitsstufe! Ihr könnt nicht unter {amt} fallen. ',
+  },
+  en:{
+    start:'START GAME',play_again:'PLAY AGAIN',leaderboard:'LEADERBOARD',
+    welcome:'"Welcome! I\'m Vladi, and today I\'ll test your procurement knowledge. Ready for the million?"',
+    name_ph:'What\'s your name?',
+    q_intro:['Let\'s start easy...','Another warm-up!','Getting more interesting!','You should know this...','Last easy one!',
+      'Safety net! Now it gets serious.','Real knowledge needed now!','Know your procurement facts?','This is advanced!','On to the second safety net!',
+      'This is where it gets real!','Procurement pro needed!','Only three to the million...','Almost there! Do you dare?','THE MILLION-EURO QUESTION!'],
+    correct:['Correct! 🎉','Right! Let\'s go!','That\'s it! 💪','Very good!','Bravo! 👏','Perfect!','Amazing! 🔥','Procurement pro!'],
+    wrong:'Wrong answer!',
+    timeup:'Time\'s up!',
+    won:'YOU WON!',lost:'GAME OVER',
+    won_sub:'"Incredible! You\'re true procurement pros! Come join Lio, we need you!"',
+    lost_sub_safe:'"Not bad! You\'re taking home {amt}. Next time you\'ll go further!"',
+    lost_sub_zero:'"That didn\'t work out! But hey, next time will be better!"',
+    aud_title:'Audience Poll',
+    phone_names:['Max, Head of Engineering','Pascal, Customer Success','Seema, a16z Partner','Till, Lio Co-Founder','Lukas, Lio CTO'],
+    phone_pre:'Hmm, I\'m pretty sure it\'s ',phone_suf:'!',
+    safe_msg:'Safety net! You can\'t drop below {amt}. ',
+  }
+};
+
+function t(key){return T[lang][key]||key}
+
+function setLang(l){
+  lang=l;
+  document.querySelectorAll('.lang-btn').forEach(b=>b.classList.toggle('on',b.dataset.lang===l));
+  document.getElementById('title-speech').textContent=t('welcome');
+  document.getElementById('btn-go').textContent=t('start');
+  document.getElementById('btn-lb-title').textContent='🏆 '+t('leaderboard');
+  document.getElementById('lang-tog').textContent=l==='de'?'EN':'DE';
+  document.getElementById('team-name').placeholder=t('name_ph');
+}
+function toggleLang(){setLang(lang==='de'?'en':'de');if(game.active)renderQ()}
+
+// ── MONEY LADDER ──
+const LEVELS=[50,100,200,300,500,1000,2000,4000,8000,16000,32000,64000,125000,500000,1000000];
+const SAFE=[5,9];
+function fmtE(n){return n>=1e6?'€'+n/1e6+'M':n>=1000?'€'+(n/1000)+'K':n===0?'€0':'€'+n}
+
+// ── QUESTION BANK (harder, 15 per tier) ──
+// ── EASY: Lio agents & basic capabilities (a procurement visitor should get most of these) ──
+const Q_EASY=[
+{de:{q:'Welche Art von KI nutzt Lio?',a:['Predictive Analytics','Robotic Process Automation','Agentic AI','Computer Vision']},en:{q:'What type of AI does Lio use?',a:['Predictive Analytics','Robotic Process Automation','Agentic AI','Computer Vision']},c:2},
+{de:{q:'Was macht der Guided Buying Agent von Lio?',a:['Er genehmigt Rechnungen automatisch','Er leitet Nutzer zum richtigen Einkaufskanal und erstellt Bestellanforderungen','Er verhandelt Preise mit Lieferanten','Er verwaltet Verträge']},en:{q:'What does Lio\'s Guided Buying Agent do?',a:['Auto-approves invoices','Guides users to the right buying channel and creates purchase requests','Negotiates prices with suppliers','Manages contracts']},c:1},
+{de:{q:'Wie kommunizieren Lieferanten mit Lios Agenten?',a:['Über ein spezielles Lieferantenportal','Per Fax','Per E-Mail – kein Portal nötig','Über eine Blockchain-Plattform']},en:{q:'How do suppliers interact with Lio\'s agents?',a:['Through a dedicated supplier portal','Via fax','Via email – no portal needed','Through a blockchain platform']},c:2},
+{de:{q:'Welcher Lio-Agent führt automatisierte Verhandlungen per E-Mail?',a:['Guided Buying Agent','PR Review Agent','Negotiation Agent','Invoice Agent']},en:{q:'Which Lio agent conducts automated email-based negotiations?',a:['Guided Buying Agent','PR Review Agent','Negotiation Agent','Invoice Agent']},c:2},
+{de:{q:'Über welches Interface nutzen Endanwender Lio?',a:['SAP Fiori Screens','Ein Chat-Interface (z.B. in Teams)','Excel-Uploads','Ein Desktop-Programm']},en:{q:'How do end-users interact with Lio?',a:['SAP Fiori screens','A chat interface (e.g. in Teams)','Excel uploads','A desktop application']},c:1},
+{de:{q:'Welches ist KEIN echter Lio-Agent?',a:['PR Review Agent','Order Confirmation Agent','Expense Report Agent','Contract Agent']},en:{q:'Which is NOT a real Lio agent?',a:['PR Review Agent','Order Confirmation Agent','Expense Report Agent','Contract Agent']},c:2},
+{de:{q:'Was kann der Sourcing Agent von Lio automatisieren?',a:['Gehaltsabrechnungen','RFQ-Prozesse end-to-end','Urlaubsanträge','IT-Support-Tickets']},en:{q:'What can Lio\'s Sourcing Agent automate?',a:['Payroll processing','End-to-end RFQ processes','Vacation requests','IT support tickets']},c:1},
+{de:{q:'Was passiert, wenn ein Nutzer ein Angebot als PDF bei Lio hochlädt?',a:['Es wird nur archiviert','Lio extrahiert Positionen, Preise und Mengen automatisch','Es wird an den Lieferanten weitergeleitet','Nichts – nur Texteingabe möglich']},en:{q:'What happens when a user uploads a quote PDF to Lio?',a:['It is just archived','Lio automatically extracts line items, prices and quantities','It is forwarded to the supplier','Nothing – only text input is supported']},c:1},
+{de:{q:'Wo können Einkäufer alle Agentenaktivitäten überwachen?',a:['Im ERP-System','In der Agent Supervisor Ansicht','Per E-Mail-Benachrichtigung','In einem separaten BI-Tool']},en:{q:'Where can buyers monitor all agent activities?',a:['In the ERP system','In the Agent Supervisor view','Via email notifications','In a separate BI tool']},c:1},
+{de:{q:'Was macht Lios Procurement Intelligence Agent?',a:['Er verwaltet Lieferantenstammdaten','Er analysiert historische Bestelldaten für Insights','Er schreibt Verträge','Er erstellt Budgetpläne']},en:{q:'What does Lio\'s Procurement Intelligence Agent do?',a:['Manages supplier master data','Analyzes historical PO data for insights','Writes contracts','Creates budget plans']},c:1},
+{de:{q:'Welche Art von Lio-Modul ist der Guided Buying Agent?',a:['Sourcing & Negotiation','Supplier & Contracts','P2P Core','Platform Intelligence']},en:{q:'What type of Lio module is the Guided Buying Agent?',a:['Sourcing & Negotiation','Supplier & Contracts','P2P Core','Platform Intelligence']},c:2},
+{de:{q:'Wie priorisiert Lio die Lieferantenauswahl?',a:['Alphabetisch','Zufällig aus der Datenbank','Bevorzugte Lieferanten > Verträge > historische POs','Immer der günstigste']},en:{q:'How does Lio prioritize vendor selection?',a:['Alphabetically','Randomly from the database','Preferred suppliers > contracts > historical POs','Always the cheapest']},c:2},
+{de:{q:'Was macht das Agent Builder Tool (AOPs) von Lio?',a:['Es baut physische Roboter','Es erstellt kundenspezifische Agenten','Es generiert Finanzberichte','Es plant Meetings']},en:{q:'What does Lio\'s Agent Builder Tool (AOPs) do?',a:['Builds physical robots','Creates custom agents for specific use cases','Generates financial reports','Schedules meetings']},c:1},
+{de:{q:'Mit welchen P2P-Systemen integriert sich Lio?',a:['Nur mit SAP','Nur mit Coupa','SAP Ariba, Coupa und SAP direkt','Nur mit Oracle']},en:{q:'Which P2P systems does Lio integrate with?',a:['SAP only','Coupa only','SAP Ariba, Coupa, and direct SAP','Oracle only']},c:2},
+{de:{q:'Wie hieß Lio früher?',a:['ProcureAI','SpendBot','LioTech','askLio']},en:{q:'What was Lio formerly known as?',a:['ProcureAI','SpendBot','LioTech','askLio']},c:3},
+];
+// ── MEDIUM: Deeper agent knowledge, implementation details, procurement expertise ──
+const Q_MED=[
+{de:{q:'Welche typischen Einsparungen erzielt der Negotiation Agent?',a:['1–3%','5–10%','15–20%','25–30%']},en:{q:'What typical savings does the Negotiation Agent achieve?',a:['1–3%','5–10%','15–20%','25–30%']},c:1},
+{de:{q:'Wie schnell kann der Guided Buying Agent mit Coupa live gehen?',a:['In 1 Woche','In ca. 6 Wochen','In 6 Monaten','In 1 Jahr']},en:{q:'How fast can the Guided Buying Agent go live with Coupa?',a:['In 1 week','In about 6 weeks','In 6 months','In 1 year']},c:1},
+{de:{q:'Welcher Lio-Agent wird als "schnellster Time-to-Value" positioniert?',a:['Guided Buying Agent','Sourcing Agent','Negotiation Agent','Contract Agent']},en:{q:'Which Lio agent is positioned as "fastest time-to-value"?',a:['Guided Buying Agent','Sourcing Agent','Negotiation Agent','Contract Agent']},c:2},
+{de:{q:'Welche Lösungsrate erreicht der Negotiation Agent typischerweise?',a:['20–30%','35–50%','50–80%','90–95%']},en:{q:'What resolution rate does the Negotiation Agent typically achieve?',a:['20–30%','35–50%','50–80%','90–95%']},c:2},
+{de:{q:'Brauchen Lieferanten ein Portal, um auf RFQs von Lio zu antworten?',a:['Ja, ein spezielles Lio-Portal','Ja, über SAP Ariba','Nein, alles läuft per E-Mail','Ja, über EDI-Schnittstelle']},en:{q:'Do suppliers need a portal to respond to Lio\'s RFQs?',a:['Yes, a dedicated Lio portal','Yes, via SAP Ariba','No, everything runs via email','Yes, via EDI interface']},c:2},
+{de:{q:'Wie viele Positionen kann Lios Angebotsupload aus einem Dokument extrahieren?',a:['Maximal 10','Maximal 50','100–150','Unbegrenzt']},en:{q:'How many line items can Lio\'s quote upload extract from a document?',a:['Maximum 10','Maximum 50','100–150','Unlimited']},c:2},
+{de:{q:'Wie viele Modulkategorien hat die Lio-Plattform?',a:['2: Core und Advanced','3: Buying, Sourcing, Analytics','4: P2P Core, Sourcing & Negotiation, Supplier & Contracts, Platform Intelligence','6: eine pro Agententyp']},en:{q:'How many module categories does the Lio platform have?',a:['2: Core and Advanced','3: Buying, Sourcing, Analytics','4: P2P Core, Sourcing & Negotiation, Supplier & Contracts, Platform Intelligence','6: one per agent type']},c:2},
+{de:{q:'Was ist eine zentrale Anforderung für die Guided Buying Implementierung?',a:['Mindestens 5.000 Mitarbeiter','ERP/P2P-Integration und Stammdaten','Eine eigene IT-Abteilung mit 50+ Mitarbeitern','Ein vollständig digitaler Einkauf']},en:{q:'What is a key requirement for Guided Buying implementation?',a:['At least 5,000 employees','ERP/P2P integration and master data','An IT department with 50+ staff','A fully digital procurement setup']},c:1},
+{de:{q:'Was beschreibt "Tail Spend" und welcher Lio-Agent adressiert ihn?',a:['Strategische Großeinkäufe – Sourcing Agent','Viele kleine, nicht verwaltete Einkäufe – Negotiation Agent','Letzte Bestellungen des Quartals – Invoice Agent','Rücksendungskosten – Contract Agent']},en:{q:'What is "tail spend" and which Lio agent addresses it?',a:['Strategic large purchases – Sourcing Agent','Many small, unmanaged purchases – Negotiation Agent','Last orders of the quarter – Invoice Agent','Return costs – Contract Agent']},c:1},
+{de:{q:'Welche Absender-E-Mail-Optionen haben Lios Agenten?',a:['Nur noreply@lio.ai','Nur eine generische Einkaufs-Mailbox','Eigene E-Mail des Einkäufers oder geteilte Einkaufs-Mailbox','Nur die E-Mail des Lieferanten']},en:{q:'What email sender options do Lio\'s agents have?',a:['Only noreply@lio.ai','Only a generic procurement mailbox','Buyer\'s own email or shared procurement mailbox','Only the supplier\'s email']},c:2},
+{de:{q:'Was beschreibt die "Kraljic-Matrix"?',a:['Lieferantenbewertung nach Umsatz','Klassifizierung nach Versorgungsrisiko & Ergebniseinfluss','Priorisierung von Verträgen nach Laufzeit','Analyse der Zahlungsbedingungen']},en:{q:'What does the Kraljic Matrix classify?',a:['Supplier rating by revenue','Items by supply risk & profit impact','Contracts by duration','Payment terms analysis']},c:1},
+{de:{q:'Wie steigert Lio die Katalognutzung im Einkauf?',a:['Durch Pflicht-Schulungen für Nutzer','Durch automatische Katalogprüfung vor Freitext-Eingabe','Durch Blockieren aller Freitext-Bestellungen','Durch höhere Preise bei Nicht-Katalog-Ware']},en:{q:'How does Lio increase catalog adoption?',a:['Through mandatory user training','By auto-checking catalogs before allowing free-text','By blocking all free-text orders','Through higher prices for non-catalog items']},c:1},
+{de:{q:'Was prüft Lios PR Review Agent?',a:['Die Kreditwürdigkeit von Lieferanten','Bestellanforderungen gegen konfigurierbare Regeln und Compliance','Die Verfügbarkeit von Waren','Die Qualität der Lieferung']},en:{q:'What does Lio\'s PR Review Agent check?',a:['Supplier creditworthiness','Purchase requisitions against configurable rules and compliance','Goods availability','Delivery quality']},c:1},
+{de:{q:'Was ist Lios Kundenbindungsrate?',a:['92%','96%','98%','100%']},en:{q:'What is Lio\'s customer retention rate?',a:['92%','96%','98%','100%']},c:3},
+{de:{q:'Welche VC-Firma hat Lios Series A angeführt?',a:['Sequoia Capital','Andreessen Horowitz (a16z)','Lightspeed Ventures','Benchmark']},en:{q:'Which VC firm led Lio\'s Series A?',a:['Sequoia Capital','Andreessen Horowitz (a16z)','Lightspeed Ventures','Benchmark']},c:1},
+];
+// ── HARD: Expert-level Lio metrics, implementation specifics, advanced procurement ──
+const Q_HARD=[
+{de:{q:'Um wie viel Prozent reduziert Lio die manuelle Arbeit im Einkauf?',a:['~50%','~65%','~75%','~85%']},en:{q:'By what percentage does Lio reduce manual procurement work?',a:['~50%','~65%','~75%','~85%']},c:3},
+{de:{q:'Wie lange dauert die Implementierung des Negotiation Agent?',a:['1 Tag','1–3 Wochen','3–6 Monate','6–12 Monate']},en:{q:'How long does the Negotiation Agent implementation take?',a:['1 day','1–3 weeks','3–6 months','6–12 months']},c:1},
+{de:{q:'Welche Ausführungsgenauigkeit erreichte Lio bei einem großen Retail-Kunden?',a:['97,2%','98,5%','99,8%','99,95%']},en:{q:'What execution accuracy did Lio achieve at a major retailer?',a:['97.2%','98.5%','99.8%','99.95%']},c:2},
+{de:{q:'Wann muss laut Lios Richtlinie eine KI-Offenlegung in E-Mails erfolgen?',a:['Immer bei jeder E-Mail','Nur bei vollautomatischem Versand – nicht wenn der Mensch auf Senden klickt','Nur bei Verhandlungen über 100.000€','Nie – Lio verbirgt die KI komplett']},en:{q:'When must AI disclosure be included in Lio agent emails?',a:['Always in every email','Only for fully automated sends – not when human clicks send','Only for negotiations over €100K','Never – Lio hides AI completely']},c:1},
+{de:{q:'Wie viele FTEs hat ein Industriekonzern in 12 Monaten mit Lio umverteilt?',a:['~20','~40','~60','~100']},en:{q:'How many FTEs did a manufacturer reallocate with Lio in 12 months?',a:['~20','~40','~60','~100']},c:2},
+{de:{q:'Zu welchem Anteil der BPO-Kosten operiert Lio bei einem großen Retail-Kunden?',a:['~3%','~8%','~15%','~22%']},en:{q:'At what fraction of BPO cost does Lio operate at a major retailer?',a:['~3%','~8%','~15%','~22%']},c:0},
+{de:{q:'In welchen 5 Integrationsmodellen kann der Negotiation Agent eingesetzt werden?',a:['Standalone, per Chat, per API, per Webhook, per Batch','Standalone, Anforderer-geführt, Shared Service Center, Einkaufsteam, Vollautonomer Agent','Manuell, Halbautomatisch, Automatisch, Überwacht, Blind','Light, Standard, Premium, Enterprise, Custom']},en:{q:'In which 5 integration models can the Negotiation Agent be deployed?',a:['Standalone, chat, API, webhook, batch','Standalone, requester-led, shared service center, purchasing team, fully autonomous','Manual, semi-auto, auto, supervised, blind','Light, standard, premium, enterprise, custom']},c:1},
+{de:{q:'Welche Stammdaten benötigt der Guided Buying Agent mindestens?',a:['Nur eine Lieferantenliste','Nur ERP-Zugangsdaten','Lieferanten, Kontierungsobjekte, Org-Strukturen, Kataloge, Richtlinien','Nur Mitarbeiterdaten und Kostenstellen']},en:{q:'What master data does the Guided Buying Agent require at minimum?',a:['Just a supplier list','Just ERP credentials','Suppliers, cost objects, org structures, catalogs, policies','Just employee data and cost centers']},c:2},
+{de:{q:'Wie hoch sind die jährlichen Einsparungen eines Tier-1-Herstellers durch Lio?',a:['~$2M','~$4M','~$6M','~$9M']},en:{q:'What are the annual savings of a Tier-1 manufacturer using Lio?',a:['~$2M','~$4M','~$6M','~$9M']},c:2},
+{de:{q:'Was ist Lios ICP-Kriterium für technischen Fit?',a:['Oracle Cloud und Salesforce','SAP ECC/S4, SAP Ariba, Coupa, Microsoft Teams','Nur Open-Source ERP-Systeme','Jede Cloud-Lösung']},en:{q:'What is Lio\'s ICP criterion for technical fit?',a:['Oracle Cloud and Salesforce','SAP ECC/S4, SAP Ariba, Coupa, Microsoft Teams','Open-source ERP systems only','Any cloud solution']},c:1},
+{de:{q:'Wie viele Nutzer hat die Lio-Plattform?',a:['500.000+','1.000.000+','2.000.000+','5.000.000+']},en:{q:'How many users are on the Lio platform?',a:['500,000+','1,000,000+','2,000,000+','5,000,000+']},c:2},
+{de:{q:'Wie lange dauert die Guided Buying Implementierung mit SAP?',a:['2–4 Wochen','4–6 Wochen','8–20 Wochen','6–12 Monate']},en:{q:'How long does Guided Buying implementation take with SAP?',a:['2–4 weeks','4–6 weeks','8–20 weeks','6–12 months']},c:2},
+{de:{q:'Was beschreibt "Spend Under Management" (SUM)?',a:['Gesamtausgaben minus Gehälter','Anteil der Ausgaben unter Einkaufskontrolle','Budget, das noch nicht verplant ist','Ausgaben unter dem Jahresplan']},en:{q:'What is "Spend Under Management" (SUM)?',a:['Total spend minus salaries','Share of spend under procurement control','Budget not yet allocated','Spending below annual plan']},c:1},
+{de:{q:'Welches Minimum-ARR-Potenzial muss ein Lio-Zielkunde haben?',a:['$25K','$50K','$100K','$250K']},en:{q:'What minimum ARR potential must a Lio target customer have?',a:['$25K','$50K','$100K','$250K']},c:2},
+{de:{q:'Wie hoch sind die jährlichen Ausgaben für Einkaufspersonal weltweit?',a:['$80 Milliarden','$120 Milliarden','$180 Milliarden','$250 Milliarden']},en:{q:'What\'s the annual global spend on procurement talent?',a:['$80 billion','$120 billion','$180 billion','$250 billion']},c:2},
+];
+
+// ── AUDIO (enhanced) ──
+const audio={
+  ctx:null,on:true,
+  init(){if(!this.ctx)try{this.ctx=new(window.AudioContext||window.webkitAudioContext)()}catch(e){this.on=false}},
+  tone(f,d,w='sine',v=.06){
+    if(!this.on||!this.ctx)return;
+    const o=this.ctx.createOscillator(),g=this.ctx.createGain();
+    o.type=w;o.frequency.value=f;g.gain.setValueAtTime(v,this.ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(.001,this.ctx.currentTime+d);
+    o.connect(g);g.connect(this.ctx.destination);o.start();o.stop(this.ctx.currentTime+d);
+  },
+  select(){this.tone(440,.08);this.tone(554,.06)},
+  correct(){[0,80,160,240,320].forEach((d,i)=>setTimeout(()=>this.tone([523,659,784,1047,1319][i],.15+(i*.03)),d))},
+  wrong(){
+    this.tone(330,.2,'sawtooth',.07);
+    setTimeout(()=>this.tone(262,.2,'sawtooth',.07),100);
+    setTimeout(()=>this.tone(196,.4,'sawtooth',.06),200);
+  },
+  million(){[0,100,200,300,400,500,650,800].forEach((d,i)=>setTimeout(()=>this.tone([523,659,784,1047,1319,1568,1568,2093][i],.25,'sine',.06),d))},
+  lifeline(){this.tone(660,.06,'triangle');setTimeout(()=>this.tone(880,.08,'triangle'),60)},
+  tick(){this.tone(1200,.02,'sine',.03)},
+  tickLow(){this.tone(800,.04,'sine',.04)},
+  suspense(remaining){
+    if(remaining<=5)this.tone(880,.05,'sine',.04);
+    else this.tone(660,.03,'sine',.02);
+  },
+  levelUp(){
+    [0,60,120].forEach((d,i)=>setTimeout(()=>this.tone([784,988,1175][i],.1,'sine',.05),d));
+  },
+  timeUp(){
+    this.tone(440,.15,'sawtooth',.06);
+    setTimeout(()=>this.tone(349,.15,'sawtooth',.06),80);
+    setTimeout(()=>this.tone(262,.3,'sawtooth',.06),160);
+  },
+};
+
+function toggleMute(){audio.on=!audio.on;document.getElementById('mute-btn').textContent=audio.on?'🔊':'🔇'}
+
+// ── PARTICLE SYSTEM ──
+const fx={
+  canvas:null,ctx:null,items:[],running:false,
+  init(){
+    this.canvas=document.getElementById('fx-canvas');
+    this.ctx=this.canvas.getContext('2d');
+    this.resize();
+    window.addEventListener('resize',()=>this.resize());
+  },
+  resize(){this.canvas.width=window.innerWidth;this.canvas.height=window.innerHeight},
+  spawn(count,opts){
+    for(let i=0;i<count;i++){
+      this.items.push({
+        x:opts.x??this.canvas.width/2,
+        y:opts.y??this.canvas.height/2,
+        vx:(Math.random()-.5)*(opts.spread||10),
+        vy:-Math.random()*(opts.upforce||12)-2,
+        life:opts.life||90,maxLife:opts.life||90,
+        size:Math.random()*(opts.maxSize||8)+(opts.minSize||3),
+        color:opts.colors[Math.floor(Math.random()*opts.colors.length)],
+        rot:Math.random()*6.28,rotV:(Math.random()-.5)*.2,
+        grav:opts.grav||.12,
+        shape:opts.shape||'rect',
+      });
+    }
+    if(!this.running)this.loop();
+  },
+  loop(){
+    this.running=true;
+    this.ctx.clearRect(0,0,this.canvas.width,this.canvas.height);
+    for(let i=this.items.length-1;i>=0;i--){
+      const p=this.items[i];
+      p.x+=p.vx;p.y+=p.vy;p.vy+=p.grav;p.life--;p.rot+=p.rotV;
+      const a=p.life/p.maxLife;
+      this.ctx.save();this.ctx.translate(p.x,p.y);this.ctx.rotate(p.rot);
+      this.ctx.globalAlpha=a;this.ctx.fillStyle=p.color;
+      if(p.shape==='circle'){
+        this.ctx.beginPath();this.ctx.arc(0,0,p.size/2,0,6.28);this.ctx.fill();
+      }else{
+        this.ctx.fillRect(-p.size/2,-p.size/2,p.size,p.size);
+      }
+      this.ctx.restore();
+      if(p.life<=0)this.items.splice(i,1);
+    }
+    if(this.items.length>0)requestAnimationFrame(()=>this.loop());
+    else this.running=false;
+  },
+  correctBurst(){
+    const r=document.querySelector('.ans.correct');
+    if(!r)return;
+    const b=r.getBoundingClientRect();
+    this.spawn(25,{x:b.left+b.width/2,y:b.top+b.height/2,spread:8,upforce:8,life:50,
+      colors:['#22c55e','#4ade80','#fbbf24','#34d399'],maxSize:6,minSize:2,shape:'circle'});
+  },
+  wrongShake(){
+    const el=document.getElementById('s-game');
+    el.classList.add('shake');
+    setTimeout(()=>el.classList.remove('shake'),500);
+    // Red flash
+    const flash=document.createElement('div');
+    flash.className='level-flash wrong-flash';
+    document.body.appendChild(flash);
+    setTimeout(()=>flash.remove(),900);
+  },
+  levelUpFlash(){
+    const flash=document.createElement('div');
+    flash.className='level-flash';
+    document.body.appendChild(flash);
+    setTimeout(()=>flash.remove(),900);
+  },
+  megaConfetti(){
+    const w=this.canvas.width,h=this.canvas.height;
+    const colors=['#f59e0b','#22c55e','#6366f1','#ec4899','#14b8a6','#f43f5e','#fbbf24','#818cf8'];
+    for(let wave=0;wave<6;wave++){
+      setTimeout(()=>{
+        this.spawn(50,{x:Math.random()*w,y:-20,spread:14,upforce:10,life:140,
+          colors,maxSize:10,minSize:4,grav:.08});
+      },wave*250);
+    }
+  }
+};
+
+// ── TIMER SYSTEM ──
+const timer={
+  dur:30,rem:30,interval:null,paused:false,
+  start(secs){
+    this.stop();this.dur=secs;this.rem=secs;this.paused=false;
+    const bar=document.getElementById('timer-fill');
+    bar.style.transition='none';bar.style.width='100%';bar.className='timer-fill';
+    void bar.offsetWidth; // force reflow
+    bar.style.transition='width .1s linear';
+    this.interval=setInterval(()=>{
+      if(this.paused)return;
+      this.rem-=.1;
+      const pct=Math.max(0,(this.rem/this.dur)*100);
+      bar.style.width=pct+'%';
+      if(pct<=20)bar.className='timer-fill danger';
+      else if(pct<=40)bar.className='timer-fill warning';
+      else bar.className='timer-fill';
+      // Tick sounds in last 10s
+      if(this.rem<=10&&this.rem>0){
+        const rounded=Math.round(this.rem*10)/10;
+        if(Math.abs(rounded-Math.round(rounded))<.05)audio.suspense(this.rem);
+      }
+      if(this.rem<=0){this.stop();timeUp();}
+    },100);
+  },
+  stop(){if(this.interval){clearInterval(this.interval);this.interval=null}},
+  pause(){this.paused=true},
+  resume(){this.paused=false},
+};
+
+// ── GAME STATE ──
+const game={active:false,level:0,questions:[],picked:-1,locked:false,ll50:false,llPh:false,llAu:false,teamName:'Team'};
+
+function shuffle(arr){const a=[...arr];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function pickN(arr,n){return shuffle(arr).slice(0,n)}
+
+function startGame(){
+  audio.init();fx.init();
+  const nameEl=document.getElementById('team-name');
+  game.teamName=nameEl.value.trim()||(lang==='de'?'Team':'Team');
+  game.active=true;game.level=0;game.picked=-1;game.locked=false;
+  game.ll50=false;game.llPh=false;game.llAu=false;
+  const easy=pickN(Q_EASY,5).map(prepQ);
+  const med=pickN(Q_MED,5).map(prepQ);
+  const hard=pickN(Q_HARD,5).map(prepQ);
+  game.questions=[...easy,...med,...hard];
+  ['ll-50','ll-ph','ll-au'].forEach(id=>{document.getElementById(id).classList.remove('used')});
+  showScreen('s-game');
+  buildLadder();
+  nextQuestion();
+}
+
+function prepQ(q){
+  const idxs=[0,1,2,3],shuffled=shuffle(idxs);
+  return{de:{q:q.de.q,a:shuffled.map(i=>q.de.a[i])},en:{q:q.en.q,a:shuffled.map(i=>q.en.a[i])},c:shuffled.indexOf(q.c)};
+}
+
+function nextQuestion(){
+  game.picked=-1;game.locked=false;
+  document.querySelectorAll('.ans').forEach(a=>{a.className='ans';a.style.pointerEvents=''});
+  renderQ();updateLadder();
+  const intro=t('q_intro')[game.level]||'';
+  let msg=intro;
+  if(SAFE.includes(game.level)&&game.level>0)msg=t('safe_msg').replace('{amt}',fmtE(LEVELS[game.level]))+intro;
+  say(msg);
+  // Timer: 35s easy, 30s med, 25s hard
+  const secs=game.level<5?35:game.level<10?30:25;
+  timer.start(secs);
+}
+
+function renderQ(){
+  const q=game.questions[game.level],d=q[lang];
+  document.getElementById('q-text').textContent=d.q;
+  d.a.forEach((a,i)=>document.getElementById('a'+i).textContent=a);
+}
+
+function say(txt){document.getElementById('g-speech').textContent=txt}
+
+function pick(idx){
+  if(game.locked||game.picked>=0)return;
+  game.picked=idx;
+  timer.stop();
+  audio.select();
+  document.querySelectorAll('.ans')[idx].classList.add('locked');
+  setTimeout(()=>reveal(idx),1800);
+}
+
+function timeUp(){
+  if(game.locked||game.picked>=0)return;
+  game.locked=true;
+  audio.timeUp();
+  const q=game.questions[game.level];
+  document.querySelectorAll('.ans')[q.c].classList.add('correct');
+  say(t('timeup')+' → '+q[lang].a[q.c]);
+  fx.wrongShake();
+  setTimeout(()=>gameOver(false),3000);
+}
+
+function reveal(idx){
+  game.locked=true;
+  const q=game.questions[game.level],correct=q.c;
+  const els=document.querySelectorAll('.ans');
+
+  if(idx===correct){
+    els[idx].classList.remove('locked');els[idx].classList.add('correct');
+    audio.correct();
+    fx.correctBurst();
+    fx.levelUpFlash();
+    const msgs=t('correct');
+    say(msgs[Math.floor(Math.random()*msgs.length)]);
+    if(game.level===14){
+      setTimeout(()=>{audio.million();fx.megaConfetti();gameOver(true)},2000);
+    }else{
+      game.level++;
+      audio.levelUp();
+      setTimeout(()=>nextQuestion(),2200);
+    }
+  }else{
+    els[idx].classList.remove('locked');els[idx].classList.add('wrong');
+    els[correct].classList.add('correct');
+    audio.wrong();
+    fx.wrongShake();
+    say(t('wrong')+' → '+q[lang].a[correct]);
+    setTimeout(()=>gameOver(false),3000);
+  }
+}
+
+function gameOver(won){
+  timer.stop();
+  game.active=false;
+  let winnings=0;
+  if(won){winnings=LEVELS[14]}
+  else{for(let s=SAFE.length-1;s>=0;s--){if(game.level>SAFE[s]){winnings=LEVELS[SAFE[s]];break}}}
+
+  document.getElementById('go-team').textContent=game.teamName;
+  document.getElementById('go-label').textContent=won?t('won'):t('lost');
+  const amtEl=document.getElementById('go-amount');
+  amtEl.textContent=fmtE(winnings);
+  amtEl.className='go-amount'+(won||winnings>0?'':' lost');
+
+  let sub;
+  if(won)sub=t('won_sub');
+  else if(winnings>0)sub=t('lost_sub_safe').replace('{amt}',fmtE(winnings));
+  else sub=t('lost_sub_zero');
+  document.getElementById('go-sub').textContent=sub;
+
+  // Leaderboard
+  const lb=JSON.parse(localStorage.getItem('lio-wwm-lb')||'[]');
+  lb.push({name:game.teamName,score:winnings,level:won?15:game.level,date:Date.now()});
+  lb.sort((a,b)=>b.score-a.score||b.level-a.level);
+  if(lb.length>20)lb.length=20;
+  localStorage.setItem('lio-wwm-lb',JSON.stringify(lb));
+
+  document.getElementById('btn-again').textContent=t('play_again');
+  document.getElementById('btn-lb').textContent='🏆 '+t('leaderboard');
+  showScreen('s-over');
+  if(won)setTimeout(()=>fx.megaConfetti(),600);
+}
+
+// ── LIFELINES ──
+function use5050(){
+  if(game.ll50||game.picked>=0||game.locked)return;
+  game.ll50=true;audio.lifeline();
+  document.getElementById('ll-50').classList.add('used');
+  const q=game.questions[game.level];
+  const wrong=shuffle([0,1,2,3].filter(i=>i!==q.c)).slice(0,2);
+  wrong.forEach(i=>{document.querySelectorAll('.ans')[i].classList.add('dim')});
+  say(lang==='de'?'Zwei falsche Antworten sind weg!':'Two wrong answers removed!');
+}
+
+function usePhone(){
+  if(game.llPh||game.picked>=0||game.locked)return;
+  game.llPh=true;audio.lifeline();timer.pause();
+  document.getElementById('ll-ph').classList.add('used');
+  const q=game.questions[game.level];
+  const names=t('phone_names');
+  const name=names[Math.floor(Math.random()*names.length)];
+  const letter=['A','B','C','D'][q.c];
+  document.getElementById('ph-name').textContent=name;
+  document.getElementById('ph-text').textContent='"'+t('phone_pre')+letter+t('phone_suf')+'"';
+  document.getElementById('m-phone').classList.add('on');
+}
+
+function useAudience(){
+  if(game.llAu||game.picked>=0||game.locked)return;
+  game.llAu=true;audio.lifeline();timer.pause();
+  document.getElementById('ll-au').classList.add('used');
+  const q=game.questions[game.level];
+  const tier=game.level<5?'easy':game.level<10?'med':'hard';
+  const bias=tier==='easy'?65:tier==='med'?50:35;
+  const pcts=[0,0,0,0];
+  pcts[q.c]=bias+Math.floor(Math.random()*15);
+  let rem=100-pcts[q.c];
+  [0,1,2,3].filter(i=>i!==q.c).forEach((i,idx,arr)=>{
+    if(idx===arr.length-1){pcts[i]=rem}
+    else{const v=Math.floor(Math.random()*Math.floor(rem*.6));pcts[i]=v;rem-=v}
+  });
+  document.getElementById('aud-title').textContent=t('aud_title');
+  const barsEl=document.getElementById('aud-bars');
+  barsEl.innerHTML=['A','B','C','D'].map((l,i)=>`
+    <div class="aud-col">
+      <div class="aud-pct">${pcts[i]}%</div>
+      <div class="aud-fill" style="height:0" data-h="${pcts[i]*1.1}"></div>
+      <div class="aud-lbl">${l}</div>
+    </div>`).join('');
+  document.getElementById('m-aud').classList.add('on');
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    barsEl.querySelectorAll('.aud-fill').forEach(b=>{b.style.height=b.dataset.h+'px'});
+  }));
+}
+
+function closeModal(id){
+  document.getElementById(id).classList.remove('on');
+  if(game.active)timer.resume();
+}
+
+// ── LADDER ──
+function buildLadder(){
+  const el=document.getElementById('ladder');
+  el.innerHTML=LEVELS.map((v,i)=>{
+    const safe=SAFE.includes(i)?'safe':'';
+    return`<div class="lv ${safe}" data-lv="${i}"><span class="num">${i+1}</span><span class="amt">${fmtE(v)}</span></div>`;
+  }).reverse().join('');
+}
+function updateLadder(){
+  document.querySelectorAll('.lv').forEach(el=>{
+    const lv=+el.dataset.lv;
+    el.classList.remove('cur','done');
+    if(lv===game.level)el.classList.add('cur');
+    else if(lv<game.level)el.classList.add('done');
+  });
+}
+
+// ── LEADERBOARD ──
+function showLBModal(){
+  const lb=JSON.parse(localStorage.getItem('lio-wwm-lb')||'[]');
+  const title=lang==='de'?'🏆 Bestenliste':'🏆 Leaderboard';
+  document.getElementById('lb-modal-title').textContent=title;
+  const listEl=document.getElementById('lb-list');
+  if(!lb.length){
+    listEl.innerHTML=`<div class="lb-empty">${lang==='de'?'Noch keine Einträge – spielt eine Runde!':'No entries yet – play a round!'}</div>`;
+  }else{
+    listEl.innerHTML=lb.slice(0,10).map((e,i)=>{
+      const medal=i===0?'🥇':i===1?'🥈':i===2?'🥉':'';
+      const rankCls=i===0?'gold':i===1?'silver':i===2?'bronze':'';
+      const name=e.name||'Team';
+      return`<div class="lb-row">
+        <span class="lb-rank ${rankCls}">${medal||i+1+'.'}</span>
+        <span class="lb-name">${name}</span>
+        <span class="lb-score">${fmtE(e.score)} · ${lang==='de'?'Frage':'Q'} ${e.level}</span>
+      </div>`;
+    }).join('');
+  }
+  document.getElementById('m-lb').classList.add('on');
+}
+
+// ── SCREENS ──
+function showScreen(id){document.querySelectorAll('.scr').forEach(s=>s.classList.remove('on'));document.getElementById(id).classList.add('on')}
+function backToTitle(){showScreen('s-title')}
+
+// ── INIT ──
+setLang('de');
+document.getElementById('team-name').addEventListener('keydown',e=>{if(e.key==='Enter')startGame()});
+</script>
+</body>
+</html>

@@ -1,0 +1,8 @@
+# Large files
+*.pptx
+
+# Claude local config
+.claude/
+
+# OS files
+.DS_Store
