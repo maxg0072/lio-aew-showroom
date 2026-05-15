@@ -1,5 +1,9 @@
 # Large files
 *.pptx
+*.zip
+
+# Design source folder (kept locally)
+Wer wird Millionär/
 
 # Claude local config
 .claude/
